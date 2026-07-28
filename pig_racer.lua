@@ -32,11 +32,13 @@ local startSide = "top";
 
 local relays = {};
 
+local monitorLine = 1;
 local function outputInformation(string)
     if not monitor then
         print(string);
     else
         monitor.write(string);
+        monitorLine = monitorLine + 1;
     end
 end
 
