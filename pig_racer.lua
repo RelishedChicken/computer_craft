@@ -8,11 +8,10 @@ local speeds = {"slow", "med", "fast"};
 local speedColors = {
   pig1_slow = colors.white,   pig1_med = colors.orange,  pig1_fast = colors.magenta,
   pig2_slow = colors.lightBlue, pig2_med = colors.yellow, pig2_fast = colors.lime,
-  pig3_slow = colors.pink,    pig3_med = colors.gray,    pig3_fast = colors.lightGray,
-  pig4_slow = colors.cyan,    pig4_med = colors.purple,  pig4_fast = colors.blue,
 };
 
 local finishCableSide = "left";
+local speedCableSide = "back";
 
 -- Map each pig to the color its finish plate pulses when triggered
 local finishColors = {
