@@ -17,8 +17,6 @@ local speedCableSide = "back";
 local finishColors = {
   pig1 = colors.white,
   pig2 = colors.lightBlue,
-  pig3 = colors.pink,
-  pig4 = colors.cyan,
 };
 
 -- Plain redstone side for the wireless start transmitter
