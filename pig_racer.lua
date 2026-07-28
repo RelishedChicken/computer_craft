@@ -11,6 +11,7 @@ local speedOutputs = {
   pig1_slow = {relayLocation, "top"}, pig1_fast = {relayLocation, "left"},
   pig2_slow = {relayLocation, "right"},  pig2_fast = {relayLocation, "back"},
 };
+local firedOutputs = {};
 
 --Monitor outout
 local monitor = peripheral.find("monitor");
@@ -77,7 +78,6 @@ end
 
 --Choose and random speed for each pig and set
 local function pulseSpeedSelectors(rolledSpeeds)
-    local firedOutputs = {}
 
     for _, pig in ipairs(pigs) do
         local choice = speeds[math.random(1, 2)]
@@ -87,15 +87,11 @@ local function pulseSpeedSelectors(rolledSpeeds)
         table.insert(firedOutputs, target)
     end
 
+    --Print speeds
     for pig, speed in pairs(rolledSpeeds) do
         outputInformation(pig .. " -> " .. speed)
     end
-
-    sleep(0.5)
-
-    for _, target in ipairs(firedOutputs) do
-        setOut(target, false)
-    end
+    
 end
 
 --Start race
@@ -107,14 +103,24 @@ end
 
 --Returns the winner (waiting for the winner)
 local function waitForWinner()
+
+    --Hold until there's a winner
     while true do
+
         for _, pig in ipairs(pigs) do
             if getIn(finishInputs[pig]) then
                 return pig
             end
         end
+
         sleep(0.05)
+    end   
+
+    --Reset speeds
+    for _, target in ipairs(firedOutputs) do
+        setOut(target, false)
     end
+
 end
 
 --Handle race
