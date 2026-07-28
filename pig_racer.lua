@@ -18,7 +18,7 @@ local monitor = peripheral.find("monitor");
 if not monitor then
     print("Running without monitor");
 else
-    monotir.setTextScale(0.5)
+    monitor.setTextScale(0.5)
     monitor.clear();
 end
 
