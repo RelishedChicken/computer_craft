@@ -37,6 +37,7 @@ local function outputInformation(string)
     if not monitor then
         print(string);
     else
+        monitor.setCursorPos(1, monitorLine);
         monitor.write(string);
         monitorLine = monitorLine + 1;
     end
