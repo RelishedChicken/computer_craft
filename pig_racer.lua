@@ -2,7 +2,7 @@
 --CONFIG--
 
 local pigs = {"pig1", "pig2"};
-local speeds = {"slow", "medium", "fast"};
+local speeds = {"slow", "med", "fast"};
 
 --Cabling
 local speedColors = {
@@ -29,48 +29,48 @@ local startSide = "top";
 
 --Choose and random speed for each pig and set
 local function pulseSpeedSelectors(rolledSpeeds)
-  
-  local mask = 0;
 
-  for _, pig in ipairs(pigs) do
+    local mask = 0;
+
+    for _, pig in ipairs(pigs) do
 
     --Set the actual speed
     local choice = speeds[math.random(1, 3)];
     rolledSpeeds[pig] = choice;
     mask = colors.combine(mask, speedColors[pig .. "_" .. choice]);
+    end  
 
     --Output pig speed
     for pig, speed in pairs(rolledSpeeds) do
         print(pig .. " -> " .. speed);
     end
 
-  end
 
-  --Pulse that output
-  redstone.setBundledOutput(speedCableSide, mask);
-  sleep(0.5);
-  redstone.setBundledOutput(speedCableSide, 0);
+    --Pulse that output
+    redstone.setBundledOutput(speedCableSide, mask);
+    sleep(0.5);
+    redstone.setBundledOutput(speedCableSide, 0);
 
 end
 
 --Start race
 local function fireStart()
-  redstone.setOutput(startSide, true);
-  sleep(0.5);
-  redstone.setOutput(startSide, false);
+    redstone.setOutput(startSide, true);
+    sleep(0.5);
+    redstone.setOutput(startSide, false);
 end
 
 --Returns the winner (waiting for the winner)
 local function waitForWinner()
-  while true do
-    local mask = redstone.getBundledInput(finishCableSide)
-    for _, pig in ipairs(pigs) do
-      if colors.test(mask, finishColors[pig]) then
-        return pig
-      end
+    while true do
+        local mask = redstone.getBundledInput(finishCableSide)
+        for _, pig in ipairs(pigs) do
+            if colors.test(mask, finishColors[pig]) then
+                return pig;
+            end
+        end
+        sleep(0.05); -- check ~every tick
     end
-    sleep(0.05) -- check ~every tick
-  end
 end
 
 --Handle race
@@ -87,11 +87,11 @@ local function runRace()
     local winner = waitForWinner();
 
     print("Winner: " .. winner);
-    return winner, rolledSpeeds;
+    return winner, chosenSpeeds;
 
 end
 
 --Run race
-local winner, rolledSpeeds = runRace();
+local winner, chosenSpeeds = runRace();
 
 
