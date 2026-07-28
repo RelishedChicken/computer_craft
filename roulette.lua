@@ -1,7 +1,7 @@
 local relays = {peripheral.find("redstone_relay")};
 local barres = {peripheral.find("barrel")};
 local monitor = peripheral.find("monitor");
-local buttonRelay = peripheral.wrap("redstone_relay_72");
+local buttonRelay = peripheral.wrap("redstone_relay_73");
 local wheelColors = {
     [1] = "red",   [2] = "black", [3] = "red",
     [4] = "green",
