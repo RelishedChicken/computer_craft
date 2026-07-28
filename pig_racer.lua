@@ -6,9 +6,10 @@ local speeds = {"slow", "fast"};
 
 -- Map each pig+speed to a {relay, side} pair
 -- check your actual peripheral name with peripheral.getNames()
+local relayLocation = "back";
 local speedOutputs = {
-  pig1_slow = {"relay1", "top"}, pig1_fast = {"relay1", "left"},
-  pig2_slow = {"relay1", "right"},  pig2_fast = {"relay1", "back"},
+  pig1_slow = {relayLocation, "top"}, pig1_fast = {relayLocation, "left"},
+  pig2_slow = {relayLocation, "right"},  pig2_fast = {relayLocation, "back"},
 };
 
 local finishInputs = {
