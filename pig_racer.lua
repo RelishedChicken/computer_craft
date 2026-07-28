@@ -17,6 +17,7 @@ local monitor = peripheral.find("monitor");
 if not monitor then
     print("Running without monitor");
 else
+    monotir.setTextScale(0.5)
     monitor.clear();
 end
 
@@ -137,4 +138,9 @@ end
 --Run race
 local winner, chosenSpeeds = runRace();
 
+sleep(2);
+
+if monitor
+    monitor.clear();
+end
 
