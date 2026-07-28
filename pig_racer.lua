@@ -140,7 +140,7 @@ local winner, chosenSpeeds = runRace();
 
 sleep(2);
 
-if monitor
+if monitor then
     monitor.clear();
 end
 
