@@ -12,6 +12,14 @@ local speedOutputs = {
   pig2_slow = {relayLocation, "right"},  pig2_fast = {relayLocation, "back"},
 };
 
+--Monitor outout
+local monitor = peripheral.find("monitor");
+if not monitor then
+    print("Running without monitor");
+else
+    monitor.clear();
+end
+
 local finishInputs = {
   pig1 = {"computer", "left"},
   pig2 = {"computer", "right"},
@@ -23,6 +31,14 @@ local startSide = "top";
 --ENDCONFIG--
 
 local relays = {};
+
+local function outputInformation(string)
+    if not monitor then
+        print(string);
+    else
+        monitor.write(string);
+    end
+end
 
 local function getRelay(name)
     if name == "computer" then
@@ -68,7 +84,7 @@ local function pulseSpeedSelectors(rolledSpeeds)
     end
 
     for pig, speed in pairs(rolledSpeeds) do
-        print(pig .. " -> " .. speed)
+        outputInformation(pig .. " -> " .. speed)
     end
 
     sleep(0.5)
@@ -101,16 +117,16 @@ end
 local function runRace()
     local chosenSpeeds = {}
 
-    print("Deciding speeds");
+    outputInformation("Deciding speeds");
     pulseSpeedSelectors(chosenSpeeds);
 
-    print("Starting race...");
+    outputInformation("Starting race...");
     fireStart();
 
-    print("Waiting for winner...");
+    outputInformation("Waiting for winner...");
     local winner = waitForWinner();
 
-    print("Winner: " .. winner);
+    outputInformation("Winner: " .. winner);
     return winner, chosenSpeeds;
 
 end
