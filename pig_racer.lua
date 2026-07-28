@@ -2,13 +2,13 @@
 --CONFIG--
 
 local pigs = {"pig1", "pig2"};
-local speeds = {"slow", "med", "fast"};
+local speeds = {"slow", "fast"};
 
 -- Map each pig+speed to a {relay, side} pair
 -- check your actual peripheral name with peripheral.getNames()
 local speedOutputs = {
-  pig1_slow = {"relay1", "top"},   pig1_med = {"relay1", "bottom"}, pig1_fast = {"relay1", "left"},
-  pig2_slow = {"relay1", "right"}, pig2_med = {"relay1", "front"},  pig2_fast = {"relay1", "back"},
+  pig1_slow = {"relay1", "top"}, pig1_fast = {"relay1", "left"},
+  pig2_slow = {"relay1", "right"},  pig2_fast = {"relay1", "back"},
 };
 
 local finishInputs = {
