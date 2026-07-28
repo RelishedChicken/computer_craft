@@ -4,19 +4,16 @@
 local pigs = {"pig1", "pig2"};
 local speeds = {"slow", "med", "fast"};
 
---Cabling
-local speedColors = {
-  pig1_slow = colors.white,   pig1_med = colors.orange,  pig1_fast = colors.magenta,
-  pig2_slow = colors.lightBlue, pig2_med = colors.yellow, pig2_fast = colors.lime,
+-- Map each pig+speed to a {relay, side} pair
+-- check your actual peripheral name with peripheral.getNames()
+local speedOutputs = {
+  pig1_slow = {"relay1", "top"},   pig1_med = {"relay1", "bottom"}, pig1_fast = {"relay1", "left"},
+  pig2_slow = {"relay1", "right"}, pig2_med = {"relay1", "front"},  pig2_fast = {"relay1", "back"},
 };
 
-local finishCableSide = "left";
-local speedCableSide = "back";
-
--- Map each pig to the color its finish plate pulses when triggered
-local finishColors = {
-  pig1 = colors.white,
-  pig2 = colors.lightBlue,
+local finishInputs = {
+  pig1 = {"computer", "left"},
+  pig2 = {"computer", "right"},
 };
 
 -- Plain redstone side for the wireless start transmitter
@@ -24,30 +21,60 @@ local startSide = "top";
 
 --ENDCONFIG--
 
---Choose and random speed for each pig and set
-local function pulseSpeedSelectors(rolledSpeeds)
+local relays = {};
 
-    local mask = 0;
-
-    for _, pig in ipairs(pigs) do
-
-    --Set the actual speed
-    local choice = speeds[math.random(1, 3)];
-    rolledSpeeds[pig] = choice;
-    mask = colors.combine(mask, speedColors[pig .. "_" .. choice]);
-    end  
-
-    --Output pig speed
-    for pig, speed in pairs(rolledSpeeds) do
-        print(pig .. " -> " .. speed);
+local function getRelay(name)
+    if name == "computer" then
+        return redstone;
     end
 
+    if not relays[name] then
+        relays[name] = peripheral.wrap(name);
+    end
 
-    --Pulse that output
-    redstone.setBundledOutput(speedCableSide, mask);
-    sleep(0.5);
-    redstone.setBundledOutput(speedCableSide, 0);
+    return relays[name];
+end
 
+local function setOut(target, value)
+    local r = getRelay(target[1]);
+
+    if r == redstone then
+        redstone.setOutput(target[2], value);
+    else
+        r.setOutput(target[2], value);
+    end
+end
+
+local function getIn(target)
+    local r = getRelay(target[1]);
+    if r == redstone then
+        return redstone.getInput(target[2]);
+    else
+        return r.getInput(target[2]);
+    end
+end
+
+--Choose and random speed for each pig and set
+local function pulseSpeedSelectors(rolledSpeeds)
+    local firedOutputs = {}
+
+    for _, pig in ipairs(pigs) do
+        local choice = speeds[math.random(1, 3)]
+        rolledSpeeds[pig] = choice
+        local target = speedOutputs[pig .. "_" .. choice]
+        setOut(target, true)
+        table.insert(firedOutputs, target)
+    end
+
+    for pig, speed in pairs(rolledSpeeds) do
+        print(pig .. " -> " .. speed)
+    end
+
+    sleep(0.5)
+
+    for _, target in ipairs(firedOutputs) do
+        setOut(target, false)
+    end
 end
 
 --Start race
@@ -60,13 +87,12 @@ end
 --Returns the winner (waiting for the winner)
 local function waitForWinner()
     while true do
-        local mask = redstone.getBundledInput(finishCableSide)
         for _, pig in ipairs(pigs) do
-            if colors.test(mask, finishColors[pig]) then
-                return pig;
+            if getIn(finishInputs[pig]) then
+                return pig
             end
         end
-        sleep(0.05); -- check ~every tick
+        sleep(0.05)
     end
 end
 
