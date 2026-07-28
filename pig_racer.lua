@@ -59,7 +59,7 @@ local function pulseSpeedSelectors(rolledSpeeds)
     local firedOutputs = {}
 
     for _, pig in ipairs(pigs) do
-        local choice = speeds[math.random(1, 3)]
+        local choice = speeds[math.random(1, 2)]
         rolledSpeeds[pig] = choice
         local target = speedOutputs[pig .. "_" .. choice]
         setOut(target, true)
