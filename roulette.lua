@@ -37,7 +37,7 @@ end
 local function wrapBarrels(startNum, count)
     local barrels = {}
     for i = 0, count - 1 do
-        local name = "barrel" .. (startNum + i)
+        local name = "minecraft:barrel_" .. (startNum + i)
         local barrel = peripheral.wrap(name)
         if barrel then
             table.insert(barrels, barrel)
@@ -51,6 +51,19 @@ end
 --Get the real peripheral names
 local relays = wrapRelays(56, 16);
 local barrels = wrapBarrels(0, 3);
+
+--Vault & bet barrel info
+local vaultName = "minecraft:barrel_4";
+local betBarrels = {
+    red   = barrels[1],
+    black = barrels[2],
+    green = barrels[3],
+}
+local betBarrelPositions = {
+    red   = { x = -558, y = 66, z = -152 },
+    black = { x = -558, y = 66, z = -154 },
+    green = { x = -558, y = 66, z = -156 },
+}
 
 --Monitor helpers
 local function writeCentered(mon, text, yOffset, textColor, bgColor, scale)
@@ -79,7 +92,7 @@ local function showLandingScreen(color)
     elseif color == "green" then
         bg = colors.green
     end
-    writeCentered(monitor, color:upper(), 0, colors.white, bg, 2)
+    writeCentered(monitor, color:upper(), 0, colors.white, bg, 5)
 end
 
 --Running Code
@@ -115,12 +128,72 @@ end
 
 local function rollBall()
     local random_choice = math.random(1,#relays);
-    animateBall(random_choice);
-    print("Landed on "..random_choice);
+    local color = animateBall(random_choice);
+    print("Landed on "..random_choice.." ("..color..")");
+    return color;
 end
 
-local function handlePayouts()
+--Betting & payouts
+local currentBets = { red = {}, black = {}, green = {} };
 
+local function lockBets()
+    currentBets = { red = {}, black = {}, green = {} };
+    for color, barrel in pairs(betBarrels) do
+        for slot, item in pairs(barrel.list()) do
+            table.insert(currentBets[color], { name = item.name, count = item.count });
+            barrel.pushItems(vaultName, slot);
+        end
+    end
+end
+
+local function depositItems(color, itemName, count)
+    local barrel = betBarrels[color];
+    local pos = betBarrelPositions[color];
+    local remaining = count;
+
+    -- Top up any existing stack of the same item first
+    for slot, item in pairs(barrel.list()) do
+        if remaining <= 0 then break end
+        if item.name == itemName and item.count < 64 then
+            local add = math.min(64 - item.count, remaining);
+            commands.exec(("item replace block %d %d %d container.%d with %s %d")
+                :format(pos.x, pos.y, pos.z, slot - 1, itemName, item.count + add));
+            remaining = remaining - add;
+        end
+    end
+
+    -- Fill empty slots with whatever is left
+    if remaining > 0 then
+        local occupied = {};
+        for slot in pairs(barrel.list()) do
+            occupied[slot] = true;
+        end
+        local slot = 1;
+        while remaining > 0 and slot <= barrel.size() do
+            if not occupied[slot] then
+                local add = math.min(64, remaining);
+                commands.exec(("item replace block %d %d %d container.%d with %s %d")
+                    :format(pos.x, pos.y, pos.z, slot - 1, itemName, add));
+                remaining = remaining - add;
+            end
+            slot = slot + 1;
+        end
+    end
+
+    if remaining > 0 then
+        print("Warning: "..color.." barrel is full, could not pay out "..remaining.." x "..itemName);
+    end
+end
+
+local function handlePayouts(winningColor)
+    local bets = currentBets[winningColor];
+    local multiplier = payoutMultipliers[winningColor];
+
+    for _, entry in ipairs(bets) do
+        local payout = entry.count * multiplier;
+        print("Paying out "..payout.." x "..entry.name.." to "..winningColor);
+        depositItems(winningColor, entry.name, payout);
+    end
 end
 
 --Button handling
@@ -149,14 +222,16 @@ end
 local function gameLoop()
     while true do
         clearAll()
-        writeCentered(monitor, "Press START", 0, colors.white)
+        writeCentered(monitor, "Welcome! Place your bets in the barrel & press the button", 0, colors.white)
         print("Waiting for start button...")
         waitForStart()
 
+        lockBets()
+
         print("Round starting!")
-        writeCentered(monitor, "Spinning...", 0, colors.white)
-        rollBall()
-        handlePayouts()
+        writeCentered(monitor, "Spinning!", 0, colors.white)
+        local winningColor = rollBall()
+        handlePayouts(winningColor)
     end
 end
 
