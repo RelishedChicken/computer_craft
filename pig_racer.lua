@@ -105,22 +105,53 @@ local function outputInformation(text, color)
     monitorLine = monitorLine + 1;
 end
 
-local function showWinScreen(pig)
-    local name = pigNames[pig] or pig;
+-- Splits `text` into lines of at most `maxWidth` characters, breaking on
+-- word boundaries so words are never cut mid-word.
+local function wrapText(text, maxWidth)
+    if maxWidth < 1 then
+        return { text }
+    end
+    local lines = {}
+    local current = ""
+    for word in text:gmatch("%S+") do
+        local candidate = (current == "" and word) or (current.." "..word)
+        if #candidate > maxWidth and current ~= "" then
+            table.insert(lines, current)
+            current = word
+        else
+            current = candidate
+        end
+    end
+    if current ~= "" then
+        table.insert(lines, current)
+    end
+    return lines
+end
+
+-- Clears the monitor and writes `text`, centered and word-wrapped to fit
+-- the monitor's width at the given scale.
+local function writeCentered(text, textColor, bgColor, scale)
     if not monitor then
-        print(name .. " wins!");
+        print(text);
         return;
     end
-    monitor.setTextScale(2);
-    monitor.setBackgroundColor(pigColors[pig] or colors.black);
+    monitor.setTextScale(scale or 1);
+    monitor.setBackgroundColor(bgColor or colors.black);
     monitor.clear();
     local w, h = monitor.getSize();
-    local text = name:upper().." WINS!";
-    local x = math.floor((w - #text) / 2) + 1;
-    local y = math.floor(h / 2) + 1;
-    monitor.setCursorPos(x, y);
-    monitor.setTextColor(colors.white);
-    monitor.write(text);
+    local lines = wrapText(text, w);
+    local startY = math.floor((h - #lines) / 2) + 1;
+    monitor.setTextColor(textColor or colors.white);
+    for i, line in ipairs(lines) do
+        local x = math.floor((w - #line) / 2) + 1;
+        monitor.setCursorPos(x, startY + i - 1);
+        monitor.write(line);
+    end
+end
+
+local function showWinScreen(pig)
+    local name = pigNames[pig] or pig;
+    writeCentered(name:upper().." WINS!", colors.white, pigColors[pig] or colors.black, 2);
 end
 
 --Prints a small page with the winning pig's name on printer_0
@@ -139,20 +170,7 @@ local function printWinner(pig)
 end
 
 local function showStartPrompt()
-    if not monitor then
-        print("Press the button to start");
-        return;
-    end
-    monitor.setTextScale(2);
-    monitor.setBackgroundColor(colors.black);
-    monitor.clear();
-    local w, h = monitor.getSize();
-    local text = "Press the button to start";
-    local x = math.floor((w - #text) / 2) + 1;
-    local y = math.floor(h / 2) + 1;
-    monitor.setCursorPos(x, y);
-    monitor.setTextColor(colors.white);
-    monitor.write(text);
+    writeCentered("Press the button to start", colors.white, colors.black, 2);
 end
 
 local function clearMonitor()
