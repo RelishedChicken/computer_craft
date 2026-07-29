@@ -316,7 +316,7 @@ end
 local function gameLoop()
     while true do
         clearAll()
-        writeCentered(monitor, "Welcome! Place your bets in the barrel & press the button", colors.white, colours.black, 5)
+        writeCentered(monitor, "Welcome! Place your bets in the barrel & press the button", colors.white, colours.black, 3)
         print("Waiting for start button...")
         waitForStart()
 
