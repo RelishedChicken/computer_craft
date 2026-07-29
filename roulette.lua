@@ -60,9 +60,9 @@ local betBarrels = {
 -- World coordinates of each bet barrel, needed for the /item replace block
 -- payout command (CC:Tweaked has no API to look up a peripheral's position).
 local betBarrelPositions = {
-    red   = { x = -558, y = 66, z = -153 },
-    black = { x = -558, y = 66, z = -155 },
-    green = { x = -558, y = 66, z = -157 },
+    red   = { x = -559, y = 66, z = -153 },
+    black = { x = -559, y = 66, z = -155 },
+    green = { x = -559, y = 66, z = -157 },
 }
 
 -- =========================================================
