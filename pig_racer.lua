@@ -4,46 +4,46 @@
 local pigs = {"pig1", "pig2"};
 local speeds = {"slow", "fast"};
 
--- Map each pig+speed to a {relay, side} pair
--- check your actual peripheral name with peripheral.getNames()
-local relayLocation = "back";
+-- Map each pig+speed to a {relay, side} pair on the pig-speed relay.
+-- Sides are arbitrary - sync them up with the actual Create contraption
+-- in-game and adjust here if needed.
+local relayLocation = "redstone_relay_76";
 local speedOutputs = {
-  pig1_slow = {relayLocation, "top"}, pig1_fast = {relayLocation, "left"},
-  pig2_slow = {relayLocation, "right"},  pig2_fast = {relayLocation, "back"},
+  pig1_slow = {relayLocation, "front"}, pig1_fast = {relayLocation, "left"},
+  pig2_slow = {relayLocation, "right"}, pig2_fast = {relayLocation, "bottom"},
 };
 local firedOutputs = {};
 
---Monitor outout
-local monitor = peripheral.find("monitor");
-if not monitor then
-    print("Running without monitor");
-else
-    monitor.setTextScale(0.5)
-    monitor.clear();
-end
-
-local finishInputs = {
-  pig1 = {"computer", "left"},
-  pig2 = {"computer", "right"},
+-- Colour used for each pig's monitor output / win screen.
+local pigColors = {
+  pig1 = colors.orange,
+  pig2 = colors.lightBlue,
 };
 
--- Plain redstone side for the wireless start transmitter
-local startSide = "top";
+--Monitor output
+local monitor = peripheral.wrap("monitor_3");
+if not monitor then
+    print("Running without monitor");
+end
+
+-- Both win sensors are wired directly to the computer.
+local finishInputs = {
+  pig1 = {"computer", "front"},
+  pig2 = {"computer", "left"},
+};
+
+-- Direct computer redstone side that powers the Create fans, propelling
+-- the pigs once their speeds have been rolled.
+local startSide = "back";
+
+-- Start button relay - front side triggers a new race. No cancel button
+-- planned (no space for one), so a race always runs to completion once started.
+local startButtonRelay = peripheral.wrap("redstone_relay_77");
+local startButtonSide = "front";
 
 --ENDCONFIG--
 
 local relays = {};
-
-local monitorLine = 1;
-local function outputInformation(string)
-    if not monitor then
-        print(string);
-    else
-        monitor.setCursorPos(1, monitorLine);
-        monitor.write(string);
-        monitorLine = monitorLine + 1;
-    end
-end
 
 local function getRelay(name)
     if name == "computer" then
@@ -76,8 +76,49 @@ local function getIn(target)
     end
 end
 
---Choose and random speed for each pig and set
+--Monitor helpers (small scrolling log + a big win screen, like roulette.lua)
+local monitorLine = 1;
+
+local function outputInformation(text, color)
+    if not monitor then
+        print(text);
+        return;
+    end
+    monitor.setTextScale(0.5);
+    monitor.setTextColor(color or colors.white);
+    monitor.setCursorPos(1, monitorLine);
+    monitor.write(text);
+    monitorLine = monitorLine + 1;
+end
+
+local function showWinScreen(pig)
+    if not monitor then
+        print(pig .. " wins!");
+        return;
+    end
+    monitor.setTextScale(5);
+    monitor.setBackgroundColor(pigColors[pig] or colors.black);
+    monitor.clear();
+    local w, h = monitor.getSize();
+    local text = pig:upper().." WINS!";
+    local x = math.floor((w - #text) / 2) + 1;
+    local y = math.floor(h / 2) + 1;
+    monitor.setCursorPos(x, y);
+    monitor.setTextColor(colors.white);
+    monitor.write(text);
+end
+
+local function clearMonitor()
+    if not monitor then return end
+    monitor.setTextScale(0.5);
+    monitor.setBackgroundColor(colors.black);
+    monitor.clear();
+    monitorLine = 1;
+end
+
+--Choose a random speed for each pig and pulse the matching relay side
 local function pulseSpeedSelectors(rolledSpeeds)
+    firedOutputs = {};
 
     for _, pig in ipairs(pigs) do
         local choice = speeds[math.random(1, 2)]
@@ -87,11 +128,29 @@ local function pulseSpeedSelectors(rolledSpeeds)
         table.insert(firedOutputs, target)
     end
 
-    --Print speeds
     for pig, speed in pairs(rolledSpeeds) do
-        outputInformation(pig .. " -> " .. speed)
+        outputInformation(pig .. " -> " .. speed, pigColors[pig])
     end
-    
+end
+
+--Turns off every speed output that was fired this race
+local function resetSpeedOutputs()
+    for _, target in ipairs(firedOutputs) do
+        setOut(target, false)
+    end
+end
+
+--Blocks until the start button is pressed, then waits for release (debounce)
+local function waitForStart()
+    while true do
+        os.pullEvent("redstone")
+        if startButtonRelay.getInput(startButtonSide) then
+            while startButtonRelay.getInput(startButtonSide) do
+                os.pullEvent("redstone")
+            end
+            return
+        end
+    end
 end
 
 --Start race
@@ -101,12 +160,9 @@ local function fireStart()
     redstone.setOutput(startSide, false);
 end
 
---Returns the winner (waiting for the winner)
+--Returns the winning pig once either finish sensor trips
 local function waitForWinner()
-
-    --Hold until there's a winner
     while true do
-
         for _, pig in ipairs(pigs) do
             if getIn(finishInputs[pig]) then
                 return pig
@@ -114,19 +170,14 @@ local function waitForWinner()
         end
 
         sleep(0.05)
-    end   
-
-    --Reset speeds
-    for _, target in ipairs(firedOutputs) do
-        setOut(target, false)
     end
-
 end
 
 --Handle race
 local function runRace()
     local chosenSpeeds = {}
 
+    clearMonitor();
     outputInformation("Deciding speeds");
     pulseSpeedSelectors(chosenSpeeds);
 
@@ -136,17 +187,21 @@ local function runRace()
     outputInformation("Waiting for winner...");
     local winner = waitForWinner();
 
-    outputInformation("Winner: " .. winner);
+    resetSpeedOutputs();
+
+    outputInformation("Winner: " .. winner, pigColors[winner]);
     return winner, chosenSpeeds;
-
 end
 
---Run race
-local winner, chosenSpeeds = runRace();
+--Main loop: wait for the start button, run a race, show the winner, repeat
+clearMonitor();
+while true do
+    outputInformation("Waiting for start button...");
+    waitForStart();
 
-sleep(2);
+    local winner, chosenSpeeds = runRace();
 
-if monitor then
-    monitor.clear();
+    showWinScreen(winner);
+    sleep(3);
+    clearMonitor();
 end
-
