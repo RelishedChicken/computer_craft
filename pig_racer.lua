@@ -16,14 +16,28 @@ local firedOutputs = {};
 
 -- Colour used for each pig's monitor output / win screen.
 local pigColors = {
-  pig1 = colors.orange,
-  pig2 = colors.lightBlue,
+  pig1 = colors.red,
+  pig2 = colors.blue,
+};
+
+-- Real names of the pigs (from their name tags). CC:Tweaked can't read an
+-- entity's name tag directly, so keep this in sync by hand whenever the
+-- pigs get renamed.
+local pigNames = {
+  pig1 = "pig1",
+  pig2 = "pig2",
 };
 
 --Monitor output
 local monitor = peripheral.wrap("monitor_3");
 if not monitor then
     print("Running without monitor");
+end
+
+--Printer output
+local printer = peripheral.wrap("printer_0");
+if not printer then
+    print("Running without printer");
 end
 
 -- Both win sensors are wired directly to the computer.
@@ -38,7 +52,7 @@ local startSide = "back";
 
 -- Start button relay - front side triggers a new race. No cancel button
 -- planned (no space for one), so a race always runs to completion once started.
-local startButtonRelay = peripheral.wrap("redstone_relay_77");
+local startButtonRelay = peripheral.wrap("redstone_relay_78");
 local startButtonSide = "front";
 
 --ENDCONFIG--
@@ -92,20 +106,36 @@ local function outputInformation(text, color)
 end
 
 local function showWinScreen(pig)
+    local name = pigNames[pig] or pig;
     if not monitor then
-        print(pig .. " wins!");
+        print(name .. " wins!");
         return;
     end
-    monitor.setTextScale(5);
+    monitor.setTextScale(2);
     monitor.setBackgroundColor(pigColors[pig] or colors.black);
     monitor.clear();
     local w, h = monitor.getSize();
-    local text = pig:upper().." WINS!";
+    local text = name:upper().." WINS!";
     local x = math.floor((w - #text) / 2) + 1;
     local y = math.floor(h / 2) + 1;
     monitor.setCursorPos(x, y);
     monitor.setTextColor(colors.white);
     monitor.write(text);
+end
+
+--Prints a small page with the winning pig's name on printer_0
+local function printWinner(pig)
+    if not printer then
+        print("No printer found - could not print winner");
+        return;
+    end
+    if not printer.newPage() then
+        print("Printer out of paper/ink - could not print winner");
+        return;
+    end
+    printer.setPageTitle("Race Winner");
+    printer.write((pigNames[pig] or pig).." wins!");
+    printer.endPage();
 end
 
 local function clearMonitor()
@@ -189,7 +219,8 @@ local function runRace()
 
     resetSpeedOutputs();
 
-    outputInformation("Winner: " .. winner, pigColors[winner]);
+    outputInformation("Winner: " .. (pigNames[winner] or winner), pigColors[winner]);
+    printWinner(winner);
     return winner, chosenSpeeds;
 end
 
