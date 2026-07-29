@@ -60,9 +60,9 @@ local betBarrels = {
 -- World coordinates of each bet barrel, needed for the /item replace block
 -- payout command (CC:Tweaked has no API to look up a peripheral's position).
 local betBarrelPositions = {
-    red   = { x = -558, y = 66, z = -152 },
-    black = { x = -558, y = 66, z = -154 },
-    green = { x = -558, y = 66, z = -156 },
+    red   = { x = -558, y = 66, z = -153 },
+    black = { x = -558, y = 66, z = -155 },
+    green = { x = -558, y = 66, z = -157 },
 }
 
 -- =========================================================
@@ -74,16 +74,48 @@ local function clearAll()
     monitor.clear()
 end
 
+-- Splits `text` into lines of at most `maxWidth` characters, breaking on
+-- word boundaries so words are never cut mid-word.
+local function wrapText(text, maxWidth)
+    if maxWidth < 1 then
+        return { text }
+    end
+    local lines = {}
+    local current = ""
+    for word in text:gmatch("%S+") do
+        local candidate = (current == "" and word) or (current.." "..word)
+        if #candidate > maxWidth and current ~= "" then
+            table.insert(lines, current)
+            current = word
+        else
+            current = candidate
+        end
+    end
+    if current ~= "" then
+        table.insert(lines, current)
+    end
+    return lines
+end
+
 -- Clears the monitor and writes each string in `lines`, centered and
--- stacked vertically around the middle of the screen.
+-- stacked vertically around the middle of the screen. Lines wider than the
+-- monitor are word-wrapped onto extra lines automatically.
 local function writeLines(mon, lines, textColor, bgColor, scale)
     mon.setTextScale(scale or 1)
     mon.setBackgroundColor(bgColor or colors.black)
     mon.clear()
     local w, h = mon.getSize()
-    local startY = math.floor((h - #lines) / 2) + 1
+
+    local wrapped = {}
+    for _, line in ipairs(lines) do
+        for _, wline in ipairs(wrapText(line, w)) do
+            table.insert(wrapped, wline)
+        end
+    end
+
+    local startY = math.floor((h - #wrapped) / 2) + 1
     mon.setTextColor(textColor or colors.white)
-    for i, line in ipairs(lines) do
+    for i, line in ipairs(wrapped) do
         local x = math.floor((w - #line) / 2) + 1
         mon.setCursorPos(x, startY + i - 1)
         mon.write(line)
