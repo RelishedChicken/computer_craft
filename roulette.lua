@@ -158,7 +158,7 @@ end
 -- then shows the result on the monitor. Returns the winning colour.
 local function animateBall(choice)
     local landed = false;
-    local loops = 12;
+    local loops = 4;
 
     for i = 1, loops do
         for l = 1, #relays do
