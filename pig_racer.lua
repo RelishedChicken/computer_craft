@@ -249,15 +249,18 @@ local function runCommand(cmd)
     return ok;
 end
 
--- Teleports whichever pig is sitting at `pig`'s lane finish point back to
--- that lane's start point. Uses a box tightly bound on z (the axis that
--- separates the lanes) rather than a distance sphere, since a sphere wide
--- enough to catch a pig's x/y slop also reaches into the next lane over.
+-- Teleports whichever pig is anywhere along `pig`'s lane (start to finish,
+-- plus a little padding) back to that lane's start point. Bound tightly on
+-- z (the axis that separates the lanes) so this can't reach into the lane
+-- next door, but spans the full lane on x so it catches the pig wherever
+-- it stopped, not just right at the finish line.
 local function teleportPigHome(pig)
     local lane = lanePositions[pig];
     local s, f = lane.start, lane.finish;
-    runCommand(("execute as @e[type=minecraft:pig,x=%d,y=%d,z=%d,dx=5,dy=3,dz=0] at @s run tp @s %d %d %d")
-        :format(f.x - 2, f.y - 1, f.z, s.x, s.y, s.z));
+    local minX = math.min(s.x, f.x) - 2;
+    local maxX = math.max(s.x, f.x) + 2;
+    runCommand(("execute as @e[type=minecraft:pig,x=%d,y=%d,z=%d,dx=%d,dy=3,dz=0] at @s run tp @s %d %d %d")
+        :format(minX, f.y - 1, f.z, maxX - minX, s.x, s.y, s.z));
 end
 
 -- Resets both pigs back to their lane starts once the race is over.
