@@ -53,7 +53,7 @@ local relays = wrapRelays(56, 16);
 local barrels = wrapBarrels(0, 3);
 
 --Vault & bet barrel info
-local vaultName = "minecraft:barrel_4";
+local vaultName = "minecraft:barrel_3";
 local betBarrels = {
     red   = barrels[1],
     black = barrels[2],
