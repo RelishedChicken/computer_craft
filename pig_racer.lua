@@ -183,10 +183,12 @@ local function waitForStart()
     end
 end
 
---Start race
-local function fireStart()
+--Turns the Create fans on/off. Stays on for the whole race, not just a pulse.
+local function startFans()
     redstone.setOutput(startSide, true);
-    sleep(0.5);
+end
+
+local function stopFans()
     redstone.setOutput(startSide, false);
 end
 
@@ -212,11 +214,12 @@ local function runRace()
     pulseSpeedSelectors(chosenSpeeds);
 
     outputInformation("Starting race...");
-    fireStart();
+    startFans();
 
     outputInformation("Waiting for winner...");
     local winner = waitForWinner();
 
+    stopFans();
     resetSpeedOutputs();
 
     outputInformation("Winner: " .. (pigNames[winner] or winner), pigColors[winner]);
