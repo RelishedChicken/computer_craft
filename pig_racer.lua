@@ -43,7 +43,7 @@ end
 -- Both win sensors are wired directly to the computer.
 local finishInputs = {
   pig1 = {"computer", "front"},
-  pig2 = {"computer", "left"},
+  pig2 = {"computer", "right"},
 };
 
 -- Direct computer redstone side that powers the Create fans, propelling
@@ -138,6 +138,23 @@ local function printWinner(pig)
     printer.endPage();
 end
 
+local function showStartPrompt()
+    if not monitor then
+        print("Press the button to start");
+        return;
+    end
+    monitor.setTextScale(2);
+    monitor.setBackgroundColor(colors.black);
+    monitor.clear();
+    local w, h = monitor.getSize();
+    local text = "Press the button to start";
+    local x = math.floor((w - #text) / 2) + 1;
+    local y = math.floor(h / 2) + 1;
+    monitor.setCursorPos(x, y);
+    monitor.setTextColor(colors.white);
+    monitor.write(text);
+end
+
 local function clearMonitor()
     if not monitor then return end
     monitor.setTextScale(0.5);
@@ -228,14 +245,12 @@ local function runRace()
 end
 
 --Main loop: wait for the start button, run a race, show the winner, repeat
-clearMonitor();
 while true do
-    outputInformation("Waiting for start button...");
+    showStartPrompt();
     waitForStart();
 
     local winner, chosenSpeeds = runRace();
 
     showWinScreen(winner);
     sleep(3);
-    clearMonitor();
 end
