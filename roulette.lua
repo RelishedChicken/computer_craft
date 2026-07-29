@@ -3,6 +3,7 @@
 -- =========================================================
 local monitor = peripheral.find("monitor");
 local buttonRelay = peripheral.wrap("redstone_relay_73");
+local winRelay = peripheral.wrap("redstone_relay_74");
 
 -- Lamp number (1-16, matches relay order) -> wheel colour.
 local wheelColors = {
@@ -188,6 +189,40 @@ local function rollBall()
 end
 
 -- =========================================================
+-- WIN JINGLE
+-- =========================================================
+
+-- Pulses winRelay's `side` on for `duration` seconds, then off - triggers
+-- whichever note block is wired to that side.
+local function pulseNote(side, duration)
+    winRelay.setOutput(side, true);
+    sleep(duration);
+    winRelay.setOutput(side, false);
+end
+
+-- Played once per round when someone wins: a quick run across the three
+-- note blocks (front, left, right) followed by all three together as a
+-- final chord.
+local function playWinJingle()
+    local notes = { "front", "left", "right" };
+
+    for _, side in ipairs(notes) do
+        pulseNote(side, 0.1);
+        sleep(0.1);
+    end
+
+    sleep(0.15);
+
+    for _, side in ipairs(notes) do
+        winRelay.setOutput(side, true);
+    end
+    sleep(0.3);
+    for _, side in ipairs(notes) do
+        winRelay.setOutput(side, false);
+    end
+end
+
+-- =========================================================
 -- BETTING & PAYOUTS
 -- =========================================================
 
@@ -294,11 +329,16 @@ end
 
 -- Pays out the winning colour's bets (from the currentBets snapshot) at
 -- payoutMultipliers[winningColor]x, via freshly duplicated items - the
--- original stake and all losing bets stay in the vault. Call after
+-- original stake and all losing bets stay in the vault. Plays the win
+-- jingle if anyone actually bet on the winning colour. Call after
 -- lockBets() and rollBall().
 local function handlePayouts(winningColor)
     local bets = currentBets[winningColor];
     local multiplier = payoutMultipliers[winningColor];
+
+    if #bets > 0 then
+        playWinJingle();
+    end
 
     for _, entry in ipairs(bets) do
         local payout = entry.count * multiplier;
