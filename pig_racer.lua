@@ -14,6 +14,13 @@ local speedOutputs = {
 };
 local firedOutputs = {};
 
+-- World coordinates of each pig's lane, used to teleport them back to the
+-- start once a race finishes.
+local lanePositions = {
+  pig1 = { start = { x = -556, y = 71, z = -153 }, finish = { x = -551, y = 71, z = -153 } },
+  pig2 = { start = { x = -556, y = 71, z = -155 }, finish = { x = -551, y = 71, z = -155 } },
+};
+
 -- Colour used for each pig's monitor output / win screen.
 local pigColors = {
   pig1 = colors.red,
@@ -227,6 +234,37 @@ local function stopFans()
     redstone.setOutput(startSide, false);
 end
 
+-- Runs a command via the Command Computer `commands` API, printing the
+-- failure reason if it doesn't succeed.
+local function runCommand(cmd)
+    local ok, output = commands.exec(cmd);
+    if not ok then
+        print("Command failed: "..cmd);
+        if output then
+            for _, line in ipairs(output) do
+                print("  "..line);
+            end
+        end
+    end
+    return ok;
+end
+
+-- Teleports whichever pig is sitting at `pig`'s lane finish point back to
+-- that lane's start point.
+local function teleportPigHome(pig)
+    local lane = lanePositions[pig];
+    local s, f = lane.start, lane.finish;
+    runCommand(("execute as @e[type=minecraft:pig,x=%d,y=%d,z=%d,distance=..3] at @s run tp @s %d %d %d")
+        :format(f.x, f.y, f.z, s.x, s.y, s.z));
+end
+
+-- Resets both pigs back to their lane starts once the race is over.
+local function resetPigs()
+    for _, pig in ipairs(pigs) do
+        teleportPigHome(pig);
+    end
+end
+
 --Returns the winning pig once either finish sensor trips
 local function waitForWinner()
     while true do
@@ -256,6 +294,7 @@ local function runRace()
 
     stopFans();
     resetSpeedOutputs();
+    resetPigs();
 
     outputInformation("Winner: " .. (pigNames[winner] or winner), pigColors[winner]);
     printWinner(winner);
